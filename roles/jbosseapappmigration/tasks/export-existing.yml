@@ -1,0 +1,67 @@
+- name: Create a Directory to export items to
+  file:
+    path: /tmp/{{ _jbosseapappmigration_name }}
+    state: directory
+    mode: '0777'
+
+- name: check Secrets to Export
+  shell: oc get secret --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder|-token" | awk '{print $1}'
+  register: current_secrets
+
+- name: Export Secrets
+  shell: oc get secret "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-secret-{{ item }}.yml
+  with_items: 
+    - "{{ current_secrets.stdout_lines }}" 
+  when: current_secrets.stdout_lines | length > 0 
+
+- name: check ServiceAccounts to Export
+  shell: oc get sa --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_sas
+
+- name: Export ServiceAccount
+  shell: oc get sa "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-sa-{{ item }}.yml
+  with_items: 
+    - "{{ current_sas.stdout_lines }}" 
+  when: current_sas.stdout_lines | length > 0 
+
+- name: check ConfigMap to Export
+  shell: oc get cm --no-headers -n {{ _jbosseapappmigration_namespace }} | awk '{print $1}'
+  register: current_cms
+
+- name: Export ConfigMaps 
+  shell: oc get cm "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-cm-{{ item }}.yml
+  with_items: 
+    - "{{ current_cms.stdout_lines }}"
+  when: current_cms.stdout_lines | length > 0 
+
+- name: check RoleBinding to Export
+  shell: oc get rolebinding --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "admin|deployer|builder" | awk '{print $1}'
+  register: current_rbs
+
+- name: Export RoleBindings
+  shell: oc get rolebinding "{{ item }}" -n {{ _jbosseapappmigration_namespace }} -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-rb-{{ item }}.yml
+  with_items: 
+    - "{{ current_rbs.stdout_lines }}" 
+  when: 
+    - current_rbs.stdout_lines | length > 0
+
+- name: check Service to Export
+  shell: oc get svc --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_svcs
+
+- name: Export Service
+  shell: oc get svc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-svc-{{ item }}.yml
+  with_items: 
+    - "{{ current_svcs.stdout_lines }}"
+  when: current_svcs.stdout_lines | length > 0 
+
+- name: check Routes to Export
+  shell: oc get route --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_routes
+
+- name: Export Routes
+  shell: oc get route "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-route-{{ item }}.yml
+  with_items: 
+    - "{{ current_routes.stdout_lines }}" 
+  when: current_routes.stdout_lines | length > 0 
+

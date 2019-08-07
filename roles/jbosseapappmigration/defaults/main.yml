@@ -1,0 +1,12 @@
+---
+# defaults file for jbosseapappmigration
+_jbosseapappmigration_state: present
+_jbosseapappmigration_namespace: jboss-eap-ocp
+_jbosseapappmigration_namespace_new: jboss-eap-ocp-v1
+_jbosseapappmigration_name: jboss-eap
+_jbosseapappmigration_runtime_image: registry.redhat.io/jboss-eap-7/eap72-openshift 
+_jbosseapappmigration_runtime_image_tag: latest 
+_jbosseapappmigration_runtime_image_new: registry.redhat.io/jboss-eap-7/eap72-openshift
+_jbosseapappmigration_runtime_image_tag_new: latest 
+
+

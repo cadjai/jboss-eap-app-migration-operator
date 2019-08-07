@@ -1,0 +1,19 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: jbosseapappmigrations.rhtconsulting.eapquickstarts.dev
+spec:
+  group: rhtconsulting.eapquickstarts.dev
+  names:
+    kind: JBossEAPAppMigration
+    listKind: JBossEAPAppMigrationList
+    plural: jbosseapappmigrations
+    singular: jbosseapappmigration
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

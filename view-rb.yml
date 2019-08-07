@@ -1,0 +1,14 @@
+apiVersion: authorization.openshift.io/v1
+groupNames: null
+kind: RoleBinding
+metadata:
+  creationTimestamp: 2019-08-03T01:05:21Z
+  name: view
+roleRef:
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: eap7-service-account
+  namespace: eap7-app
+userNames:
+- system:serviceaccount:eap7-app:eap7-service-account

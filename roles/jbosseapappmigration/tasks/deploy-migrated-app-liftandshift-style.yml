@@ -1,0 +1,67 @@
+---
+- name: Retrieve Support Resource Objects to be deployed
+  find:
+    paths:
+      - "/tmp/{{ _jbosseapappmigration_name }}"
+    pattern: "*.yml"
+  register: existing_support_objects
+
+- name: Deploy exported Resources from existing App
+  shell: oc apply -f {{ item.path }} -n {{ _jbosseapappmigration_namespace_new }}
+  with_items: 
+    - "{{ existing_support_objects.files }}"
+  when: 
+    - existing_support_objects.matched | int > 0
+    - existing_support_objects.files is defined
+  register: existing_support_objects_redeploy
+
+- name: Print Result of Support Resources Redeploy
+  debug:
+    var: existing_support_objects_redeploy
+
+- name: Retrieve build artifacts to be deployed
+  find:
+    paths:
+      - "/tmp/{{ _jbosseapappmigration_name }}-app"
+    pattern: "*.yml"
+  register: build_deploy_configs
+
+- name: Ensure exported Build Resources from existing App are {{ _jbosseapappmigration_state }} in the new namespace
+  shell: oc create -f {{ item.path }} -n {{ _jbosseapappmigration_namespace_new }}
+  with_items:
+    - "{{ build_deploy_configs.files }}"
+  when: 
+    - build_deploy_configs.matched | int > 0
+    - build_deploy_configs.files is defined
+    - "('-is-' in item.path | basename or '-bc-' in item.path | basename)"
+  register: existing_build_objects_redeploy
+
+- name: Print Result of Build Resources Redeploy
+  debug:
+    var: existing_build_objects_redeploy
+
+- name: Locate the original Binary to use for the Binary build
+  find:
+    paths:
+      - "/tmp/{{ _jbosseapappmigration_name }}-app/deployments"
+    pattern: "*.war,*.jar.*.ear"
+  register: build_binaries
+
+- name: Print list of binaries to build
+  debug:
+    var: build_binaries
+
+- name: Build the new app using the existing binary and new image
+  shell: oc start-build {{ _jbosseapappmigration_name }} --from-file={{ build_binaries.files[0].path }} --loglevel=5 -n {{ _jbosseapappmigration_namespace_new }}
+  when: 
+    - build_binaries.matched | int > 0
+    - build_binaries.files is defined
+    #- existing_support_objects_redeploy.changed | bool and existing_support_objects_redeploy.results[0].failed == 'false' 
+    - existing_support_objects_redeploy.changed | bool 
+    #- existing_build_objects_redeploy.changed | bool and existing_build_objects_redeploy.results[0].failed == 'false' 
+    - existing_build_objects_redeploy.changed | bool 
+  register: app_build
+
+- name: Print Outcome of Binary build
+  debug:
+    var: app_build 

@@ -1,0 +1,5 @@
+---
+- version: v1alpha1
+  group: rhtconsulting.eapquickstarts.dev
+  kind: JBossEAPAppMigration
+  playbook: /opt/ansible/playbook.yml
