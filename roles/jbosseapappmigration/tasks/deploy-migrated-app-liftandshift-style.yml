@@ -89,8 +89,8 @@
 - name: Deploy newly Built App using existing DC
   shell: oc create -f {{ exiting_app_dc.files[0].path }} -n {{ _jbosseapappmigration_namespace_new }} 
   when: 
-    - app_build.changed | bool
-    - app_build.failed == 'false'
+    - app_build.changed | bool == true
+    - app_build.failed | bool == false
     - app_build.rc == 0
     - binary_build_complete.stdout == "Complete"
     - exiting_app_dc.matched | int > 0
