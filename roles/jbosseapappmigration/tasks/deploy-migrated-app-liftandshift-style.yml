@@ -56,12 +56,47 @@
   when: 
     - build_binaries.matched | int > 0
     - build_binaries.files is defined
-    #- existing_support_objects_redeploy.changed | bool and existing_support_objects_redeploy.results[0].failed == 'false' 
     - existing_support_objects_redeploy.changed | bool 
-    #- existing_build_objects_redeploy.changed | bool and existing_build_objects_redeploy.results[0].failed == 'false' 
     - existing_build_objects_redeploy.changed | bool 
   register: app_build
 
 - name: Print Outcome of Binary build
   debug:
     var: app_build 
+
+- name: Print Status of Build Pod
+  debug:
+    var: (app_build.stdout.split(" ")[0]).split("/")[0]
+
+- name: Verify that the Build is compete
+  when:
+    - app_build.changed | bool
+  shell: oc get build {{ (app_build.stdout.split(" ")[0]).split("/")[1] }} --no-headers | awk '{print $4}'
+  register: binary_build_complete 
+  until:
+  - binary_build_complete.stdout == "Complete"
+  retries: 50
+  delay: 10
+  changed_when: false
+
+- name: Locate the original Deployment Config to use for the deployment of the newly built app
+  find:
+    paths:
+      - "/tmp/{{ _jbosseapappmigration_name }}-app/"
+    pattern: "*-dc-*.yml"
+  register: exiting_app_dc
+
+- name: Deploy newly Built App using existing DC
+  shell: oc create -f {{ exiting_app_dc.files[0].path }} -n {{ _jbosseapappmigration_namespace_new }} 
+  when: 
+    - app_build.changed | bool
+    - app_build.failed == 'false'
+    - app_build.rc == 0
+    - binary_build_complete.stdout == "Complete"
+    - exiting_app_dc.matched | int > 0
+    - exiting_app_dc.files is defined
+  register: migrated_app_deploy
+
+- name: Print Outcome of the deployment of migrated app
+  debug:
+    var: migrated_app_deploy

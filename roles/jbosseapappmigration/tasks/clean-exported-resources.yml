@@ -175,3 +175,15 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
+- name: Update Container Image reference in exported DC file
+  replace:
+    path: "{{ item.path }}"
+    regexp: "^@sha256:"
+    replace: ":{{ _jbosseapappmigration_runtime_image_tag_new }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+    - "'-dc-' in item.path | basename"
+
