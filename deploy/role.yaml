@@ -15,7 +15,13 @@ rules:
   - configmaps
   - secrets
   verbs:
-  - '*'
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
 - apiGroups:
   - apps
   resources:
@@ -24,14 +30,26 @@ rules:
   - replicasets
   - statefulsets
   verbs:
-  - '*'
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - get
   - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - rbac.authorization.k8s.io 
+  resources:
+  - role
+  - rolebinding
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
 - apiGroups:
   - apps
   resourceNames:
@@ -41,20 +59,91 @@ rules:
   verbs:
   - update
 - apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  verbs:
-  - get
-- apiGroups:
   - rhtconsulting.eapquickstarts.dev
   resources:
-  - '*'
+  - jbosseapappmigration 
   verbs:
-  - '*'
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - image.openshift.io
+  resources:
+  - image
+  - imagestream
+  - imagestreamtag
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - build.openshift.io 
+  resources:
+  - build
+  - buildconfig
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfig
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - project.openshift.io
+  resources:
+  - project
+  - projectrequest
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - authorization.openshift.io 
+  resources:
+  - role
+  - rolebinding
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
