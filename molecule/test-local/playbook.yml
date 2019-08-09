@@ -3,7 +3,7 @@
 - name: Build Operator in Kubernetes docker container
   hosts: k8s
   vars:
-    image_name: rhtconsulting.eapquickstarts.dev/JBossEAP-App-Migration-operator:testing
+    image_name: rhtconsulting.eapquickstarts.dev/jbosseap-app-migration-operator:testing
   tasks:
   # using command so we don't need to install any dependencies
   - name: Get existing image hash
@@ -23,7 +23,7 @@
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
     pull_policy: Never
-    REPLACE_IMAGE: rhtconsulting.eapquickstarts.dev/JBossEAP-App-Migration-operator:testing
+    REPLACE_IMAGE: rhtconsulting.eapquickstarts.dev/jbosseap-app-migration-operator:testing
     custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/rhtconsulting_v1alpha1_jbosseapappmigration_cr.yaml'])) | from_yaml }}"
   tasks:
   - block:

@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: JBossEAP-App-Migration-operator
+  name: jbosseap-app-migration-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: JBossEAP-App-Migration-operator
+      name: jbosseap-app-migration-operator
   template:
     metadata:
       labels:
-        name: JBossEAP-App-Migration-operator
+        name: jbosseap-app-migration-operator
     spec:
-      serviceAccountName: JBossEAP-App-Migration-operator
+      serviceAccountName: jbosseap-app-migration-operator
       containers:
         - name: ansible
           command:
@@ -43,7 +43,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "JBossEAP-App-Migration-operator"
+              value: "jbosseap-app-migration-operator"
       volumes:
         - name: runner
           emptyDir: {}
