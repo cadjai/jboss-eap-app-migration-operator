@@ -1,0 +1,92 @@
+---
+- name: Retrieve Support Resource Objects to be deployed
+  find:
+    paths:
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}"
+    pattern: "*.yml"
+  register: existing_support_objects
+
+- name: Set exported Resources from existing App to {{ _jbosseapappmigration_state }}
+  k8s:
+    state: "{{ _jbosseapappmigration_state }}"
+    definition: "{{ lookup('file', item.path) | from_yaml }}"
+    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+  with_items:
+    - "{{ existing_support_objects.files }}"
+  when:
+    - existing_support_objects.matched | int > 0
+    - existing_support_objects.files is defined
+  register: existing_support_objects_redeploy
+
+- name: Retrieve build artifacts to be deployed
+  find:
+    paths:
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app"
+    pattern: "*.yml"
+  register: build_deploy_configs
+
+- name: Set exported Build Resources from existing App to {{ _jbosseapappmigration_state }}
+  k8s:
+    state: "{{ _jbosseapappmigration_state }}"
+    definition: "{{ lookup('file', item.path) | from_yaml }}"
+    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+  with_items:
+    - "{{ build_deploy_configs.files }}"
+  when:
+    - build_deploy_configs.matched | int > 0
+    - build_deploy_configs.files is defined
+    - "('-is-' in item.path | basename or '-bc-' in item.path | basename)"
+  register: existing_build_objects_redeploy
+
+- name: Locate the original Binary to use for the Binary build
+  find:
+    paths:
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/deployments"
+    pattern: "*.war,*.jar.*.ear"
+  register: build_binaries
+
+- name: Build the new app using the existing binary and new image
+  shell: oc start-build {{ _jbosseapappmigration_name }} --from-file={{ build_binaries.files[0].path }} --loglevel=5 -n {{ _jbosseapappmigration_namespace_new }}
+  when:
+    - build_binaries.matched | int > 0
+    - build_binaries.files is defined
+    - existing_support_objects_redeploy.changed | bool
+    - existing_build_objects_redeploy.changed | bool
+  register: app_build
+
+- name: Verify that the Build is compete
+  when:
+    - app_build.changed | bool
+  k8s:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+    name: "{{ (app_build.stdout.split(" ")[0]).split("/")[1] }}-build"
+  register: binary_build_complete
+  until:
+  - binary_build_complete.stdout == "Complete"
+  retries: 50
+  delay: 10
+  changed_when: false
+
+- name: Locate the original Deployment Config to use for the deployment of the newly built app
+  find:
+    paths:
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/"
+    pattern: "*-dc-*.yml"
+  register: exiting_app_dc
+
+- name: Set exported DeploymentConfig Resource from existing App to {{ _jbosseapappmigration_state }}
+  k8s:
+    state: "{{ _jbosseapappmigration_state }}"
+    definition: "{{ lookup('file', exiting_app_dc.files[0].path) | from_yaml }}"
+    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+  when:
+    - app_build.changed | bool == true
+    - app_build.failed | bool == false
+    - app_build.rc == 0
+    - binary_build_complete.stdout == "Complete"
+    - exiting_app_dc.matched | int > 0
+    - exiting_app_dc.files is defined
+  register: migrated_app_deploy
+
