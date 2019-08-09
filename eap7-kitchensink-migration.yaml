@@ -11,3 +11,4 @@ spec:
   _jbosseapappmigration_runtime_image_tag: latest
   _jbosseapappmigration_runtime_image_new: registry.redhat.io/jboss-eap-7/eap70-openshift
   _jbosseapappmigration_runtime_image_tag_new: latest
+  _jbosseapappmigration_exported_resources_dir: "/tmp"

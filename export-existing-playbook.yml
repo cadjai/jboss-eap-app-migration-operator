@@ -9,6 +9,7 @@
   - _jbosseapappmigration_runtime_image_tag: latest 
   - _jbosseapappmigration_runtime_image_new: registry.redhat.io/jboss-eap-7/eap70-openshift
   - _jbosseapappmigration_runtime_image_tag_new: latest 
+  - _jbosseapappmigration_exported_resources_dir: "/tmp"
 
   tasks:
   - name: Include existing resource export tasks
@@ -21,4 +22,5 @@
     import_tasks: roles/jbosseapappmigration/tasks/clean-exported-resources.yml
 
   - name: Include migrate app rebuild and support config tasks
-    import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style.yml
+    #import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style.yml
+    import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style-k8s.yml

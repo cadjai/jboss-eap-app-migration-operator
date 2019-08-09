@@ -9,12 +9,13 @@
   - _jbosseapappmigration_runtime_image_tag: latest
   - _jbosseapappmigration_runtime_image_new: registry.redhat.io/jboss-eap-7/eap70-openshift
   - _jbosseapappmigration_runtime_image_tag_new: latest
+  - _jbosseapappmigration_exported_resources_dir: "/tmp"
 
   tasks:
   - name: Locate the original Binary to use for the Binary build
     find:
       paths:
-        - "/tmp/{{ _jbosseapappmigration_name }}-app/deployments"
+        - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/deployments"
       pattern: "*.war,*.jar.*.ear"
     register: build_binaries
   
@@ -55,7 +56,7 @@
   - name: Locate the original Deployment Config to use for the deployment of the newly built app
     find:
       paths:
-        - "/tmp/{{ _jbosseapappmigration_name }}-app/"
+        - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/"
       pattern: "*-dc-*.yml"
     register: exiting_app_dc
 

@@ -2,7 +2,7 @@
 - name: Retrieve Support Resource Objects to be deployed
   find:
     paths:
-      - "/tmp/{{ _jbosseapappmigration_name }}"
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}"
     pattern: "*.yml"
   register: existing_support_objects
 
@@ -22,7 +22,7 @@
 - name: Retrieve build artifacts to be deployed
   find:
     paths:
-      - "/tmp/{{ _jbosseapappmigration_name }}-app"
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app"
     pattern: "*.yml"
   register: build_deploy_configs
 
@@ -43,7 +43,7 @@
 - name: Locate the original Binary to use for the Binary build
   find:
     paths:
-      - "/tmp/{{ _jbosseapappmigration_name }}-app/deployments"
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/deployments"
     pattern: "*.war,*.jar.*.ear"
   register: build_binaries
 
@@ -82,7 +82,7 @@
 - name: Locate the original Deployment Config to use for the deployment of the newly built app
   find:
     paths:
-      - "/tmp/{{ _jbosseapappmigration_name }}-app/"
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/"
     pattern: "*-dc-*.yml"
   register: exiting_app_dc
 
