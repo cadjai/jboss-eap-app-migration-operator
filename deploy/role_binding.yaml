@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: jboss-eap-app-migration-operator
+subjects:
+- kind: ServiceAccount
+  name: jboss-eap-app-migration-operator
+roleRef:
+  kind: Role
+  name: jboss-eap-app-migration-operator
+  apiGroup: rbac.authorization.k8s.io

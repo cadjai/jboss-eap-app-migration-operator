@@ -1,0 +1,50 @@
+- name: Check if there are existing secrets to exports
+  k8s:
+    api_version: v1
+    kind: Secret
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_secrets
+
+- name: Check if there are existing ConfigMap to exports
+  k8s:
+    api_version: v1
+    kind: ConfigMap
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_cms
+
+- name: Check if there are existing bc to exports
+  k8s:
+    api_version: v1
+    kind: BuildConfig
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_bcs
+
+- name: Check if there are existing DeploymentConfig to exports
+  k8s:
+    api_version: v1
+    kind: DeploymentConfig
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_dcs
+
+- name: Check if there are existing ServiceAccount to exports
+  k8s:
+    api_version: v1
+    kind: ServiceAccount
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_sas
+
+- name: Check if there are existing Service to exports
+  k8s:
+    api_version: v1
+    kind: Service
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_svcs
+
+- name: Check if there are existing Route to exports
+  k8s:
+    api_version: v1
+    kind: Route
+    namespace: "{{ _jbosseapappmigration_namespace }}"
+  register: existing_routes
+
+

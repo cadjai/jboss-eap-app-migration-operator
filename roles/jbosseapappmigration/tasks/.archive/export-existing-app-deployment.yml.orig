@@ -1,0 +1,77 @@
+- name: Create a Directory to export items to
+  file:
+    path: /tmp/{{ _jbosseapappmigration_name }}-app
+    state: directory
+    mode: '0777'
+
+- name: check ImageStreams to Export
+  shell: oc get is --no-headers | awk '{print $1}'
+  register: current_iss
+
+- name: Export ImageStreams
+  shell: oc get is "{{ item }}" --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-is-{{ item }}.yml
+  with_items: 
+    - "{{ current_iss.stdout_lines }}" 
+  when: current_iss.stdout_lines | length > 0 
+
+- name: check BuildConfigs to Export
+  shell: oc get bc --no-headers | awk '{print $1}'
+  register: current_bcs
+
+- name: Export BuildConfigs
+  shell: oc get bc "{{ item }}" --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-bc-{{ item }}.yml
+  with_items: 
+    - "{{ current_bcs.stdout_lines }}" 
+  when: current_bcs.stdout_lines | length > 0 
+
+- name: check Deployment Configs to Export
+  shell: oc get dc --no-headers | egrep -i "{{ _jbosseapappmigration_name }}" | awk '{print $1}'
+  register: current_dcs
+
+- name: Export Deployment Configs
+  shell: oc get dc "{{ item }}" --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-dc-{{ item }}.yml
+  with_items: 
+    - "{{ current_dcs.stdout_lines }}" 
+  when: current_dcs.stdout_lines | length > 0 
+
+- name: check Running Pods to Export binary out of
+  shell: oc get po --no-headers | egrep -i "{{ _jbosseapappmigration_name }}" | egrep -i running | awk '{print $1}'
+  register: current_pos
+
+- name: Get List of artifacts running inside the Pod above
+  shell: oc rsh "{{ current_pos.stdout_lines[0] }}" ls /deployments
+  register: current_artifacts
+
+- name: Print output of running artifacts
+  debug:
+    var: current_artifacts 
+
+#- name: Export Deployed binaries from running Pods
+#  shell: oc cp {{ current_pos.stdout_lines[0] }}:deployments/{{ item }}  /tmp/{{ _jbosseapappmigration_name }}-app 
+#  with_items: 
+#    - "{{ current_artifacts.stdout_lines }}" 
+#  when: 
+#    - current_pos.stdout_lines | length > 0
+#    - current_artifacts.stdout_lines | length > 0
+#    - "( '.war' in item or '.jar' in item or '.ear' in item ) and 'deploy' not in item" 
+
+#- name: Export artifacts directory from pod
+#  shell: oc rsync {{ current_pos.stdout_lines[0] }}:/deployments /tmp/{{ _jbosseapappmigration_name }}-app
+#  when: 
+#    - current_pos.stdout_lines | length > 0
+#    - current_artifacts.stdout_lines | length > 0
+#
+#- name: Export Configuration directory from pod
+#  shell: oc rsync {{ current_pos.stdout_lines[0] }}:/opt/eap/standalone/configuration /tmp/{{ _jbosseapappmigration_name }}-app
+#  when: 
+#    - current_pos.stdout_lines | length > 0
+#    - current_artifacts.stdout_lines | length > 0
+
+- name: Export Configuration and artifacts directories from pod
+  shell: oc rsync {{ current_pos.stdout_lines[0] }}:{{ item }} /tmp/{{ _jbosseapappmigration_name }}-app
+  when: 
+    - current_pos.stdout_lines | length > 0
+    - current_artifacts.stdout_lines | length > 0
+  with_items:
+    - /deployments
+    - /opt/eap/standalone/configuration

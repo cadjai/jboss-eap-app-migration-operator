@@ -1,0 +1,13 @@
+---
+# tasks file for jbosseapappmigration
+- name: Include existing resource export tasks
+  import_tasks: roles/jbosseapappmigration/tasks/export-existing.yml
+
+- name: Include running app binary and deployment config export tasks
+  import_tasks: roles/jbosseapappmigration/tasks/export-existing-app-deployment.yml
+
+- name: Include exported deployment config cleaning tasks
+  import_tasks: roles/jbosseapappmigration/tasks/clean-exported-resources.yml
+
+- name: Include migrate app rebuild and support config tasks
+  import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style.yml

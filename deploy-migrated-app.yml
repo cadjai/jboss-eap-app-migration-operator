@@ -1,0 +1,80 @@
+- hosts: localhost
+  gather_facts: no
+  vars:
+  - _jbosseapappmigration_state: present
+  - _jbosseapappmigration_namespace: eap7-app
+  - _jbosseapappmigration_namespace_new: eap7-app-new
+  - _jbosseapappmigration_name: eap7-kitchensink
+  - _jbosseapappmigration_runtime_image: registry.redhat.io/jboss-eap-7/eap72-openshift
+  - _jbosseapappmigration_runtime_image_tag: latest
+  - _jbosseapappmigration_runtime_image_new: registry.redhat.io/jboss-eap-7/eap70-openshift
+  - _jbosseapappmigration_runtime_image_tag_new: latest
+  - _jbosseapappmigration_exported_resources_dir: "/tmp"
+
+  tasks:
+  - name: Locate the original Binary to use for the Binary build
+    find:
+      paths:
+        - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/deployments"
+      pattern: "*.war,*.jar.*.ear"
+    register: build_binaries
+  
+  - name: Print list of binaries to build
+    debug:
+      var: build_binaries
+
+  - name: Build the new app using the existing binary and new image
+    shell: oc start-build {{ _jbosseapappmigration_name }} --from-file={{ build_binaries.files[0].path }} --loglevel=5 -n {{ _jbosseapappmigration_namespace_new }}
+    when:
+      - build_binaries.matched | int > 0
+      - build_binaries.files is defined
+    register: app_build
+  
+  - name: Print Outcome of Binary build
+    debug:
+      var: app_build
+  
+  - name: Print Status of Build Pod
+    debug:
+      var: (app_build.stdout.split(" ")[0]).split("/")[1]
+  
+  - name: Verify that the Build is compete
+    when:
+      - app_build.changed | bool
+    shell: oc get build {{ (app_build.stdout.split(" ")[0]).split("/")[1] }} --no-headers | awk '{print $4}'
+    register: binary_build_complete
+    until:
+    - binary_build_complete.stdout == "Complete"
+    retries: 50
+    delay: 10
+    changed_when: false
+  
+  - name: Print Result of Build Complete Verification
+    debug:
+      var: binary_build_complete
+
+  - name: Locate the original Deployment Config to use for the deployment of the newly built app
+    find:
+      paths:
+        - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/"
+      pattern: "*-dc-*.yml"
+    register: exiting_app_dc
+
+  - name: Print Result of Original Deployment Config Retrieval
+    debug:
+      var: exiting_app_dc
+  
+  - name: Deploy newly Built App using existing DC
+    shell: oc create -f {{ exiting_app_dc.files[0].path }} -n {{ _jbosseapappmigration_namespace_new }}
+    when:
+      - app_build.changed | bool == true
+      - app_build.rc == 0
+      - app_build.failed | bool == false 
+      - binary_build_complete.stdout == "Complete"
+      - exiting_app_dc.matched | int > 0
+      - exiting_app_dc.files is defined
+    register: migrated_app_deploy
+  
+  - name: Print Outcome of the deployment of migrated app
+    debug:
+      var: migrated_app_deploy

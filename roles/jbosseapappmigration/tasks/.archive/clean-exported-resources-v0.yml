@@ -1,0 +1,67 @@
+- name: Check that the exported resources exist in directory before cleaning them
+  find:
+    paths: 
+      - "/tmp/{{ _jbosseapappmigration_name }}" 
+      - "/tmp/{{ _jbosseapappmigration_name }}-app"
+    pattern: "*.yml"
+  register: existing_resources
+
+- name: Print list of files in the exported directory
+  debug:
+    var: existing_resources
+
+- name: Remove unecessary metadata from exported file 1 of 4
+  lineinfile:
+    path: "{{ item.path }}"
+    #regexp: "^  creationTimestamp: | ^      creationTimestamp:"
+    regexp: "creationTimestamp:"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 2 of 4
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "^  selfLink: /api"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 3 of 4
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "^  uid: "
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 4 of 4
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "^  resourceVersion: "
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Update namespace in exported file
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "{{ _jbosseapappmigration_namespace }}"
+    line: "{{ _jbosseapappmigration_namespace_new }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined

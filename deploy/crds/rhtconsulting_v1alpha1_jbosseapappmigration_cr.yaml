@@ -1,0 +1,7 @@
+apiVersion: rhtconsulting.eapquickstarts.dev/v1alpha1
+kind: JbossEapAppMigration
+metadata:
+  name: example-jbosseapappmigration
+spec:
+  # Add fields here
+  size: 3

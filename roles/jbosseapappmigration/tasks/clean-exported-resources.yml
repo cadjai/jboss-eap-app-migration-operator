@@ -1,0 +1,189 @@
+- name: Check that the exported resources exist in directory before cleaning them
+  find:
+    paths: 
+      - "/tmp/{{ _jbosseapappmigration_name }}" 
+      - "/tmp/{{ _jbosseapappmigration_name }}-app"
+    pattern: "*.yml"
+  register: existing_resources
+
+- name: Print list of files in the exported directory
+  debug:
+    var: existing_resources
+
+- name: Remove unecessary metadata from exported file 1 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "creationTimestamp:"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 2 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "selfLink: /api"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 3 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "uid: "
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 4 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "resourceVersion: "
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 5 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "openshift.io/generated-by: "
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 6 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "openshift.io/image.dockerRepositoryCheck: "
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 7 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "dockerImageRepository: docker-registry"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 8 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "openshift.io/imported-from:"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 9 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "generation:"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 10 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "-token-"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 11 of 11
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "-dockercfg-"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Update namespace in exported file
+  replace:
+    path: "{{ item.path }}"
+    regexp: "{{ _jbosseapappmigration_namespace }}"
+    replace: "{{ _jbosseapappmigration_namespace_new }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Update Runtime Image in exported file
+  replace:
+    path: "{{ item.path }}"
+    regexp: "{{ _jbosseapappmigration_runtime_image }}"
+    replace: "{{ _jbosseapappmigration_runtime_image_new }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Update Runtime Image Tag in exported file
+  replace:
+    path: "{{ item.path }}"
+    regexp: "{{ _jbosseapappmigration_runtime_image_tag }}"
+    replace: "{{ _jbosseapappmigration_runtime_image_tag_new }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Update Runtime ImageStream Name in exported file
+  replace:
+    path: "{{ item.path }}"
+    regexp: "{{ _jbosseapappmigration_runtime_image | basename }}"
+    replace: "{{ _jbosseapappmigration_runtime_image_new | basename }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Update Container Image reference in exported DC file
+  replace:
+    path: "{{ item.path }}"
+    regexp: "^@sha256:"
+    replace: ":{{ _jbosseapappmigration_runtime_image_tag_new }}"
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+    - "'-dc-' in item.path | basename"
+

@@ -1,0 +1,61 @@
+- name: check Secrets to Export
+  shell: oc get secret --no-headers | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_secrets
+
+- name: Export Secrets
+  shell: oc get secret "{{ item }}" --export -o yaml  >> /tmp/{{ _jbosseapappmigration_name }}-secrets.yml
+  with_items: 
+    - "{{ current_secrets.stdout_lines }}" 
+  when: current_secrets.stdout_lines | length > 0 
+
+- name: check ServiceAccounts to Export
+  shell: oc get sa --no-headers | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_sas
+
+- name: Export ServiceAccount
+  shell: oc get sa "{{ item }}" --export -o yaml  >> /tmp/{{ _jbosseapappmigration_name }}-sas.yml
+  with_items: 
+    - "{{ current_sas.stdout_lines }}" 
+  when: current_sas.stdout_lines | length > 0 
+
+- name: check ConfigMap to Export
+  shell: oc get cm --no-headers | awk '{print $1}'
+  register: current_cms
+
+- name: Export ConfigMaps 
+  shell: oc get cm "{{ item }}" --export -o yaml  >> /tmp/{{ _jbosseapappmigration_name }}-cms.yml
+  with_items: 
+    - "{{ current_cms.stdout_lines }}"
+  when: current_cms.stdout_lines | length > 0 
+
+- name: check RoleBinding to Export
+  shell: oc get rolebinding --no-headers | egrep -vi "admin|deployer|builder" | awk '{print $1}'
+  register: current_rbs
+
+- name: Export RoleBindings
+  shell: oc get rolebinding "{{ item }}" -o yaml  >> /tmp/{{ _jbosseapappmigration_name }}-rbs.yml
+  with_items: 
+    - "{{ current_rbs.stdout_lines }}" 
+  when: 
+    - current_rbs.stdout_lines | length > 0
+
+- name: check Service to Export
+  shell: oc get svc --no-headers | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_svcs
+
+- name: Export ServiceAccount
+  shell: oc get svc "{{ item }}" --export -o yaml  >> /tmp/{{ _jbosseapappmigration_name }}-svcs.yml
+  with_items: 
+    - "{{ current_svcs.stdout_lines }}"
+  when: current_svcs.stdout_lines | length > 0 
+
+- name: check Routes to Export
+  shell: oc get route --no-headers | egrep -vi "default|deployer|builder" | awk '{print $1}'
+  register: current_routes
+
+- name: Export Routes
+  shell: oc get route "{{ item }}" --export -o yaml  >> /tmp/{{ _jbosseapappmigration_name }}-routes.yml
+  with_items: 
+    - "{{ current_routes.stdout_lines }}" 
+  when: current_routes.stdout_lines | length > 0 
+
