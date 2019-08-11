@@ -26,32 +26,6 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - apps
-  resourceNames:
-  - jboss-eap-app-migration-operator
-  resources:
-  - deployments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  verbs:
-  - get
-- apiGroups:
-  - rhtconsulting.eapquickstarts.dev
-  resources:
-  - jbosseapappmigration
-  verbs:
-  - create
-  - update
-  - delete
-  - get
-  - list
-  - watch
-  - patch
-- apiGroups:
   - route.openshift.io
   resources:
   - routes
@@ -120,6 +94,28 @@ rules:
   resources:
   - role
   - rolebinding
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - apps
+  resourceNames:
+  - jboss-eap-app-migration-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rhtconsulting.eapquickstarts.dev
+  resources:
+  - '*'
+  #- jbosseapappmigration
+  #- jbosseapappmigration/status
   verbs:
   - create
   - update
