@@ -1,13 +1,17 @@
 ---
 # tasks file for jbosseapappmigration
 - name: Include existing resource export tasks
-  import_tasks: roles/jbosseapappmigration/tasks/export-existing.yml
+  #import_tasks: roles/jbosseapappmigration/tasks/export-existing.yml
+  import_tasks: roles/jbosseapappmigration/tasks/export-existing-k8s.yml
 
 - name: Include running app binary and deployment config export tasks
-  import_tasks: roles/jbosseapappmigration/tasks/export-existing-app-deployment.yml
+  #import_tasks: roles/jbosseapappmigration/tasks/export-existing-app-deployment.yml
+  import_tasks: roles/jbosseapappmigration/tasks/export-existing-app-deployment-k8s.yml
 
 - name: Include exported deployment config cleaning tasks
-  import_tasks: roles/jbosseapappmigration/tasks/clean-exported-resources.yml
+  #import_tasks: roles/jbosseapappmigration/tasks/clean-exported-resources.yml
+  import_tasks: roles/jbosseapappmigration/tasks/clean-exported-resources-k8s.yml
 
 - name: Include migrate app rebuild and support config tasks
-  import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style.yml
+  #import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style.yml
+  import_tasks: roles/jbosseapappmigration/tasks/deploy-migrated-app-liftandshift-style-k8s.yml

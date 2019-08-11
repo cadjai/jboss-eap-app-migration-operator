@@ -1,0 +1,56 @@
+- name: Create a Directory to export items to
+  file:
+    path: /tmp/{{ _jbosseapappmigration_name }}-app
+    state: directory
+    mode: '0777'
+
+- name: check ImageStreams to Export
+  shell: kubectl get is -n {{ _jbosseapappmigration_namespace }} --no-headers | awk '{print $1}'
+  register: current_iss
+
+- name: Export ImageStreams
+  shell: kubectl get is "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-is-{{ item }}.yml
+  with_items: 
+    - "{{ current_iss.stdout_lines }}" 
+  when: current_iss.stdout_lines | length > 0 
+
+- name: check BuildConfigs to Export
+  shell: kubectl get bc -n {{ _jbosseapappmigration_namespace }} --no-headers | awk '{print $1}'
+  register: current_bcs
+
+- name: Export BuildConfigs
+  shell: kubectl get bc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-bc-{{ item }}.yml
+  with_items: 
+    - "{{ current_bcs.stdout_lines }}" 
+  when: current_bcs.stdout_lines | length > 0 
+
+- name: check Deployment Configs to Export
+  shell: kubectl get dc -n {{ _jbosseapappmigration_namespace }} --no-headers | egrep -i "{{ _jbosseapappmigration_name }}" | awk '{print $1}'
+  register: current_dcs
+
+- name: Export Deployment Configs
+  shell: kubectl get dc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-dc-{{ item }}.yml
+  with_items: 
+    - "{{ current_dcs.stdout_lines }}" 
+  when: current_dcs.stdout_lines | length > 0 
+
+- name: check Running Pods to Export binary out of
+  shell: kubectl get po -n {{ _jbosseapappmigration_namespace }} --no-headers | egrep -i "{{ _jbosseapappmigration_name }}" | egrep -i running | awk '{print $1}'
+  register: current_pos
+
+- name: Get List of artifacts running inside the Pod above
+  shell: kubectl rsh -n {{ _jbosseapappmigration_namespace }} "{{ current_pos.stdout_lines[0] }}" ls /deployments
+  register: current_artifacts
+
+- name: Print output of running artifacts
+  debug:
+    var: current_artifacts 
+
+- name: Export Configuration and artifacts directories from pod
+  shell: kubectl rsync -n {{ _jbosseapappmigration_namespace }} {{ current_pos.stdout_lines[0] }}:{{ item }} /tmp/{{ _jbosseapappmigration_name }}-app 
+  when: 
+    - current_pos.stdout_lines | length > 0
+    - current_artifacts.stdout_lines | length > 0
+  with_items:
+    - /deployments
+    - /opt/eap/standalone/configuration
