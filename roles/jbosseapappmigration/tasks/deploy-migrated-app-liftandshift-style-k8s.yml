@@ -61,7 +61,7 @@
     api_version: v1
     kind: Pod
     namespace: "{{ _jbosseapappmigration_namespace_new }}" 
-    name: "{{ (app_build.stdout.split(" ")[0]).split("/")[1] }}-build"
+    name: "{{ (app_build.stdout.split(' ')[0]).split('/')[1] }}-build"
   register: binary_build_complete
   until:
   - binary_build_complete.stdout == "Complete"

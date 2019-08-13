@@ -113,9 +113,9 @@ rules:
 - apiGroups:
   - rhtconsulting.eapquickstarts.dev
   resources:
-  - '*'
-  #- jbosseapappmigration
-  #- jbosseapappmigration/status
+  #- '*'
+  - jbosseapappmigrations
+  - jbosseapappmigrations/status
   verbs:
   - create
   - update

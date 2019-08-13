@@ -3,3 +3,4 @@
   group: rhtconsulting.eapquickstarts.dev
   kind: JbossEapAppMigration
   playbook: /opt/ansible/playbook.yml
+  #playbook: /claude/dev/operators/jboss-eap-app-migration-operator/playbook.yml

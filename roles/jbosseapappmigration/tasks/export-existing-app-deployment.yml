@@ -40,6 +40,9 @@
 
 - name: Get List of artifacts running inside the Pod above
   shell: oc rsh -n {{ _jbosseapappmigration_namespace }} "{{ current_pos.stdout_lines[0] }}" ls /deployments
+  when: 
+    - current_pos.stdout_lines is defined 
+    - current_pos.stdout_lines | length > 0
   register: current_artifacts
 
 - name: Print output of running artifacts
