@@ -1,8 +1,8 @@
 - name: Check that the exported resources exist in directory before cleaning them
   find:
     paths: 
-      - "/tmp/{{ _jbosseapappmigration_name }}" 
-      - "/tmp/{{ _jbosseapappmigration_name }}-app"
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}" 
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app"
     pattern: "*.yml"
   register: existing_resources
 
