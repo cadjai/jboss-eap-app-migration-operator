@@ -56,9 +56,33 @@ NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 jboss-eap-app-migration-operator       1         1         1            1           1m
 
 #### 2. Deploy the operator through the OLM
+A default v0.0.1 of the manifest is provided. If needed you can generate a new/updated version as follows
 
+```sh 
+operator-sdk olm-catalog gen-csv --csv-version 0.0.1
+```sh
+Update the manifest to reflect the correct OLM namespace.  
+For OCP 3.11 stream it would be the operator-lifecycle-manager namespace. 
+For OCP 4 stream it would be ?openshift-operators.
 
+Next define the OperatorGroup for multitenancy. 
+There are two predefined operator group files located under the deploy/old-catalog sub folder to use as template.
 
+Once the manifest and OperatorGroup configurations are generated or updated appropriately you can then proceed to deploying the manifest to the appropriate namespace the OLM runs from.
+```sh
+$ kubectl -f apply -f deploy/olm-catalog/ocp4-operatorgroup.yml
+$ kubectl apply -f deploy/olm-catalog/jboss-eap-app-migration-operator/0.0.1/jboss-eap-app-migration-operator.v0.0.1.clusterserviceversion.yaml
+$ kubectl get ClusterServiceVersion jboss-eap-migration-operator.0.0.1 -o json | jq '.status'
+
+After deploying the updated manifest you can now deploy your operator using the same steps used in the manual deployment above. 
+
+```sh
+$ kubectl create -f deploy/crd/rhtconsulting_v1alpha1_jbosseapappmigration_crd.yaml
+$ kubectl create -f deploy/service_account.yaml
+$ kubectl create -f deploy/role.yaml
+$ kubectl create -f deploy/role_binding.yaml
+$ kubectl create -f deploy/operator.yaml
+```sh
 
 
 ### Using the operator to migrate an application
