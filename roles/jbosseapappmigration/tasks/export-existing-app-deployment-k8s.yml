@@ -1,48 +1,79 @@
 - name: Create a Directory to export items to
   file:
-    path: /tmp/{{ _jbosseapappmigration_name }}-app
+    path: "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app"
     state: directory
     mode: '0777'
 
-- name: check ImageStreams to Export
-  shell: kubectl get is -n {{ _jbosseapappmigration_namespace }} --no-headers | awk '{print $1}'
-  register: current_iss
+- name: Create a Directory to export deployed artifact items to
+  file:
+    path: "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/{{ item | basename }}"
+    state: directory
+    mode: '0777'
+  with_items:
+    - /deployments
+    - /opt/eap/standalone/configuration
 
-- name: Export ImageStreams
-  shell: kubectl get is "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-is-{{ item }}.yml
-  with_items: 
-    - "{{ current_iss.stdout_lines }}" 
-  when: current_iss.stdout_lines | length > 0 
+- name: Lookup All ImageStreams
+  set_fact:
+    current_iss: "{{ lookup('k8s', api_versions='v1', kind='ImageStream', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: check BuildConfigs to Export
-  shell: kubectl get bc -n {{ _jbosseapappmigration_namespace }} --no-headers | awk '{print $1}'
-  register: current_bcs
+- name: Save ImageStreams into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-is.yml"
+  with_items:
+    - "{{ current_iss }}"
+   # - "{{ current_iss | list }}"
+  register: saved_iss
 
-- name: Export BuildConfigs
-  shell: kubectl get bc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-bc-{{ item }}.yml
-  with_items: 
-    - "{{ current_bcs.stdout_lines }}" 
-  when: current_bcs.stdout_lines | length > 0 
+- name: Lookup All BuildConfigs
+  set_fact:
+    current_bcs: "{{ lookup('k8s', api_versions='v1', kind='BuildConfig', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: check Deployment Configs to Export
-  shell: kubectl get dc -n {{ _jbosseapappmigration_namespace }} --no-headers | egrep -i "{{ _jbosseapappmigration_name }}" | awk '{print $1}'
-  register: current_dcs
+- name: Save BuildConfigs into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-bc.yml"
+  with_items:
+    - "{{ current_bcs }}"
+   # - "{{ current_bcs | list }}"
+  register: saved_bcs
 
-- name: Export Deployment Configs
-  shell: kubectl get dc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-dc-{{ item }}.yml
-  with_items: 
-    - "{{ current_dcs.stdout_lines }}" 
-  when: current_dcs.stdout_lines | length > 0 
+- name: Lookup All DeploymentConfigs
+  set_fact:
+    current_dcs: "{{ lookup('k8s', api_versions='v1', kind='DeploymentConfig', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: check Running Pods to Export binary out of
-  shell: kubectl get po -n {{ _jbosseapappmigration_namespace }} --no-headers | egrep -i "{{ _jbosseapappmigration_name }}" | egrep -i running | awk '{print $1}'
-  register: current_pos
+- name: Save DeploymentConfigs into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-dc.yml"
+  with_items:
+    #- "{{ current_dcs | list }}"
+    - "{{ current_dcs }}"
+  register: saved_dcs
+
+- name: Lookup Running Pod
+  set_fact:
+    #current_pods: "{{ lookup('k8s', api_versions='v1', kind='Pod', namespace=_jbosseapappmigration_namespace, field_selectors='status.phase=Running') }}"
+    current_pods: "{{ lookup('k8s', api_versions='v1', kind='Pod', namespace=_jbosseapappmigration_namespace) }}"
+
+- name: Print output of running Pod
+  debug:
+    var: current_pods
+
+- name: Set Running Pod fact
+  set_fact:
+    running_pod: "{{ item }}"
+  when: 
+    - item.status.phase == 'Running'
+  with_items:
+    - "{{ current_pods }}"
 
 - name: Get List of artifacts running inside the Pod above
-  shell: kubectl rsh -n {{ _jbosseapappmigration_namespace }} "{{ current_pos.stdout_lines[0] }}" ls /deployments
+  shell: kubectl exec -n {{ _jbosseapappmigration_namespace }} "{{ running_pod.metadata.name }}" ls /deployments
   when: 
-    - current_pos.stdout_lines is defined 
-    - current_pos.stdout_lines | length > 0
+    - running_pod is defined 
+    - current_pods | length > 0
   register: current_artifacts
 
 - name: Print output of running artifacts
@@ -50,9 +81,10 @@
     var: current_artifacts 
 
 - name: Export Configuration and artifacts directories from pod
-  shell: kubectl rsync -n {{ _jbosseapappmigration_namespace }} {{ current_pos.stdout_lines[0] }}:{{ item }} /tmp/{{ _jbosseapappmigration_name }}-app 
+  shell: kubectl -n {{ _jbosseapappmigration_namespace }} cp {{ running_pod.metadata.name }}:{{ item }} {{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/{{ item | basename }}
   when: 
-    - current_pos.stdout_lines | length > 0
+    - current_pods | length > 0
+    - running_pod is defined 
     - current_artifacts.stdout_lines | length > 0
   with_items:
     - /deployments

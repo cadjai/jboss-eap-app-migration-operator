@@ -6,37 +6,61 @@
     pattern: "*.yml"
   register: existing_support_objects
 
-- name: Set exported Resources from existing App to {{ _jbosseapappmigration_state }}
+- name: Set exported secrets from existing App to {{ _jbosseapappmigration_state }}
   k8s:
     state: "{{ _jbosseapappmigration_state }}"
     definition: "{{ lookup('file', item.path) | from_yaml }}"
-    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+    namespace: "{{ _jbosseapappmigration_namespace_new }}"
   with_items:
     - "{{ existing_support_objects.files }}"
   when:
     - existing_support_objects.matched | int > 0
     - existing_support_objects.files is defined
-  register: existing_support_objects_redeploy
+    - " '-secret' in item.path | basename"
+  register: existing_secrets_redeploy
 
-- name: Retrieve build artifacts to be deployed
-  find:
-    paths:
-      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app"
-    pattern: "*.yml"
-  register: build_deploy_configs
+- name: Set Image Pull Secret Fact if present so that it can be used to link to builder SA
+  set_fact:
+    image_pull_secret: "{{ item.result.metadata.name }}"
+  with_items:
+    - "{{ existing_secrets_redeploy.results }}"
+  when:
+    - item.changed == true
+    - item.item is defined
+    - item.item.path is defined
+    - " '-secret' in item.item.path | basename "
+    - item.result is defined
+    - item.result.kind == 'Secret'
+    - item.result.metadata is defined
+    - item.result.metadata.name is defined
 
-- name: Set exported Build Resources from existing App to {{ _jbosseapappmigration_state }}
+- name: Patch the Default SA with the secret retrived above
+  shell: "kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"{{ image_pull_secret }}\" }]}' -n {{ _jbosseapappmigration_namespace_new }}"
+  when:
+    - image_pull_secret is defined
+    - image_pull_secret | length > 0
+  register: image_pull_secret_linked_default
+
+- name: Patch the Builder SA with the secret retrived above
+  shell: "kubectl patch serviceaccount builder -p '{\"secrets\": [{\"name\": \"{{ image_pull_secret }}\" }]}' -n {{ _jbosseapappmigration_namespace_new }}"
+  when:
+    - image_pull_secret is defined
+    - image_pull_secret | length > 0
+  register: image_pull_secret_linked_builder
+
+- name: Set Remaining exported Resources from existing App to {{ _jbosseapappmigration_state }}
   k8s:
     state: "{{ _jbosseapappmigration_state }}"
     definition: "{{ lookup('file', item.path) | from_yaml }}"
-    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+    namespace: "{{ _jbosseapappmigration_namespace_new }}"
   with_items:
-    - "{{ build_deploy_configs.files }}"
+    - "{{ existing_support_objects.files }}"
   when:
-    - build_deploy_configs.matched | int > 0
-    - build_deploy_configs.files is defined
-    - "('-is-' in item.path | basename or '-bc-' in item.path | basename)"
-  register: existing_build_objects_redeploy
+    - existing_support_objects.matched | int > 0
+    - existing_support_objects.files is defined
+    - " '-secret' not in item.path | basename"
+    - " '-dc.yml' not in item.path | basename"
+  register: existing_support_objects_redeploy
 
 - name: Locate the original Binary to use for the Binary build
   find:
@@ -50,43 +74,46 @@
   when:
     - build_binaries.matched | int > 0
     - build_binaries.files is defined
-    - existing_support_objects_redeploy.changed | bool
-    - existing_build_objects_redeploy.changed | bool
+    - image_pull_secret_linked_builder is defined
+    - image_pull_secret_linked_builder.rc == 0
+    - " 'patched' in image_pull_secret_linked_builder.stdout "
   register: app_build
 
-- name: Verify that the Build is compete
+- name: Wait to give the builder pod time to complete the build
   when:
     - app_build.changed | bool
+    - app_build.rc == 0
+  pause:
+    seconds: 20
+
+- name: Verify that the Build is complete
+  when:
+    - app_build.changed | bool
+    - app_build.rc == 0
   k8s:
     api_version: v1
     kind: Pod
-    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+    namespace: "{{ _jbosseapappmigration_namespace_new }}"
     name: "{{ (app_build.stdout.split(' ')[0]).split('/')[1] }}-build"
   register: binary_build_complete
   until:
-  - binary_build_complete.stdout == "Complete"
-  retries: 50
+  - " binary_build_complete.result.status.phase != 'Pending' "
+  - " binary_build_complete.result.status.phase == 'Succeeded' "
+  retries: 5
   delay: 10
   changed_when: false
-
-- name: Locate the original Deployment Config to use for the deployment of the newly built app
-  find:
-    paths:
-      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/"
-    pattern: "*-dc-*.yml"
-  register: exiting_app_dc
 
 - name: Set exported DeploymentConfig Resource from existing App to {{ _jbosseapappmigration_state }}
   k8s:
     state: "{{ _jbosseapappmigration_state }}"
-    definition: "{{ lookup('file', exiting_app_dc.files[0].path) | from_yaml }}"
-    namespace: "{{ _jbosseapappmigration_namespace_new }}" 
+    definition: "{{ lookup('file', item.path) | from_yaml }}"
+    namespace: "{{ _jbosseapappmigration_namespace_new }}"
+  with_items:
+    - "{{ existing_support_objects.files }}"
   when:
     - app_build.changed | bool == true
     - app_build.failed | bool == false
     - app_build.rc == 0
-    - binary_build_complete.stdout == "Complete"
-    - exiting_app_dc.matched | int > 0
-    - exiting_app_dc.files is defined
+    - " binary_build_complete.result.status.phase == 'Succeeded' "
+    - " '-dc.yml' in item.path | basename"
   register: migrated_app_deploy
-

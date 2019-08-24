@@ -1,67 +1,117 @@
-- name: Create a Directory to export items to
+- name: Create temp k8s object storage directory
   file:
-    path: /tmp/{{ _jbosseapappmigration_name }}
     state: directory
-    mode: '0777'
+    path: "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}"
+  register: tmpdir
 
-- name: check Secrets to Export
-  shell: kubctl get secret --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder|-token" | awk '{print $1}'
-  register: current_secrets
+- name: Lookup All Secrets
+  set_fact:
+    current_secrets: "{{ lookup('k8s', api_versions='v1', kind='Secret', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: Export Secrets
-  shell: kubctl get secret "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-secret-{{ item }}.yml
-  with_items: 
-    - "{{ current_secrets.stdout_lines }}" 
-  when: current_secrets.stdout_lines | length > 0 
+- name: Prints List of looked up secrets
+  debug:
+    var: current_secrets
 
-- name: check ServiceAccounts to Export
-  shell: kubctl get sa --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder" | awk '{print $1}'
-  register: current_sas
+- name: Print Filtered current secrets
+  debug:
+    var: item
+  with_items:
+    - "{{ current_secrets | list }}"
+  when:
+    - current_secrets | length > 0
+    - "('default' not in item.metadata.name)"
+    - "('deployer' not in item.metadata.name)"
+    - "('builder' not in item.metadata.name)"
+    - "('-token-' not in item.metadata.name)"
+    - "('-dockercfg-' not in item.metadata.name)"
 
-- name: Export ServiceAccount
-  shell: kubctl get sa "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-sa-{{ item }}.yml
-  with_items: 
-    - "{{ current_sas.stdout_lines }}" 
-  when: current_sas.stdout_lines | length > 0 
+- name: Save Secrets into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-secret.yml"
+  with_items:
+    #- "{{ current_secrets | list }}"
+    - "{{ current_secrets }}"
+  when:
+    - "('default' not in item.metadata.name)"
+    - "('deployer' not in item.metadata.name)"
+    - "('builder' not in item.metadata.name)"
+    - "('-token-' not in item.metadata.name)"
+    - "('-dockercfg-' not in item.metadata.name)"
+  register: saved_secrets
 
-- name: check ConfigMap to Export
-  shell: kubctl get cm --no-headers -n {{ _jbosseapappmigration_namespace }} | awk '{print $1}'
-  register: current_cms
+- name: Lookup All ServiceAccounts
+  set_fact:
+    current_sas: "{{ lookup('k8s', api_versions='v1', kind='ServiceAccount', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: Export ConfigMaps 
-  shell: kubctl get cm "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-cm-{{ item }}.yml
-  with_items: 
-    - "{{ current_cms.stdout_lines }}"
-  when: current_cms.stdout_lines | length > 0 
+- name: Save ServiceAccounts into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-sa.yml"
+  with_items:
+    #- "{{ current_sas | list }}"
+    - "{{ current_sas }}"
+  when:
+    - "('default' not in item.metadata.name)"
+    - "('deployer' not in item.metadata.name)"
+    - "('builder' not in item.metadata.name)"
+  register: saved_sas
 
-- name: check RoleBinding to Export
-  shell: kubctl get rolebinding --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "admin|deployer|builder" | awk '{print $1}'
-  register: current_rbs
+- name: Lookup All ConfigMaps
+  set_fact:
+    current_cms: "{{ lookup('k8s', api_versions='v1', kind='ConfigMap', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: Export RoleBindings
-  shell: kubctl get rolebinding "{{ item }}" -n {{ _jbosseapappmigration_namespace }} -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-rb-{{ item }}.yml
-  with_items: 
-    - "{{ current_rbs.stdout_lines }}" 
-  when: 
-    - current_rbs.stdout_lines | length > 0
+- name: Save ConfigMaps into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-cm.yml"
+  with_items:
+    - "{{ current_cms | list }}"
+    #- "{{ current_cms }}"
+  register: saved_cms
 
-- name: check Service to Export
-  shell: kubctl get svc --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder" | awk '{print $1}'
-  register: current_svcs
+- name: Lookup All RoleBindings
+  set_fact:
+    current_rbs: "{{ lookup('k8s', api_versions='v1', kind='RoleBinding', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: Export Service
-  shell: kubctl get svc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-svc-{{ item }}.yml
-  with_items: 
-    - "{{ current_svcs.stdout_lines }}"
-  when: current_svcs.stdout_lines | length > 0 
+- name: Save RoleBindings into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-rb.yml"
+  with_items:
+    - "{{ current_rbs | list }}"
+    #- "{{ current_rbs }}"
+  when:
+    - "('admin' not in item.metadata.name)"
+    - "('deployer' not in item.metadata.name)"
+    - "('builder' not in item.metadata.name)"
+  register: saved_rbs
 
-- name: check Routes to Export
-  shell: kubctl get route --no-headers -n {{ _jbosseapappmigration_namespace }} | egrep -vi "default|deployer|builder" | awk '{print $1}'
-  register: current_routes
+- name: Lookup All Services
+  set_fact:
+    current_svcs: "{{ lookup('k8s', api_versions='v1', kind='Service', namespace=_jbosseapappmigration_namespace) }}"
 
-- name: Export Routes
-  shell: kubctl get route "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}/existing-route-{{ item }}.yml
-  with_items: 
-    - "{{ current_routes.stdout_lines }}" 
-  when: current_routes.stdout_lines | length > 0 
+- name: Save Services into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-svc.yml"
+  with_items:
+    #- "{{ current_svcs | list }}"
+    - "{{ current_svcs }}"
+  when:
+    - item.metadata.name and item.metadata.name is defined
+  register: saved_svcs
+
+- name: Lookup All Routes
+  set_fact:
+    current_routes: "{{ lookup('k8s', api_versions='v1', kind='Route', namespace=_jbosseapappmigration_namespace) }}"
+
+- name: Save Routes into temp dir
+  copy:
+    content: "{{ item | to_yaml }}"
+    dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-route.yml"
+  with_items:
+    #- "{{ current_routes | list }}"
+    - "{{ current_routes }}"
+  register: saved_routes
 

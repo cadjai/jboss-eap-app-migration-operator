@@ -10,7 +10,15 @@
   debug:
     var: existing_resources
 
-- name: Remove unecessary metadata from exported file 1 of 11
+- name: Remove Status block from yaml file
+  shell: sed -i '/status/,$d' {{ item.path }}
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 1 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "creationTimestamp:"
@@ -21,10 +29,10 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 2 of 11
+- name: Remove unecessary metadata from exported file 2 of 13
   lineinfile:
     path: "{{ item.path }}"
-    regexp: "selfLink: /api"
+    regexp: "selfLink:"
     state: absent
   with_items:
     - "{{ existing_resources.files }}"
@@ -32,7 +40,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 3 of 11
+- name: Remove unecessary metadata from exported file 3 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "uid: "
@@ -43,7 +51,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 4 of 11
+- name: Remove unecessary metadata from exported file 4 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "resourceVersion: "
@@ -54,7 +62,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 5 of 11
+- name: Remove unecessary metadata from exported file 5 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "openshift.io/generated-by: "
@@ -65,7 +73,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 6 of 11
+- name: Remove unecessary metadata from exported file 6 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "openshift.io/image.dockerRepositoryCheck: "
@@ -76,7 +84,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 7 of 11
+- name: Remove unecessary metadata from exported file 7 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "dockerImageRepository: docker-registry"
@@ -87,7 +95,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 8 of 11
+- name: Remove unecessary metadata from exported file 8 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "openshift.io/imported-from:"
@@ -98,7 +106,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 9 of 11
+- name: Remove unecessary metadata from exported file 9 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "generation:"
@@ -109,7 +117,7 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 10 of 11
+- name: Remove unecessary metadata from exported file 10 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "-token-"
@@ -120,10 +128,32 @@
     - existing_resources.matched | int > 0
     - existing_resources.files is defined
 
-- name: Remove unecessary metadata from exported file 11 of 11
+- name: Remove unecessary metadata from exported file 11 of 13
   lineinfile:
     path: "{{ item.path }}"
     regexp: "-dockercfg-"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 12 of 13
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "clusterIP:"
+    state: absent
+  with_items:
+    - "{{ existing_resources.files }}"
+  when:
+    - existing_resources.matched | int > 0
+    - existing_resources.files is defined
+
+- name: Remove unecessary metadata from exported file 13 of 13
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: "lastTriggeredImage:"
     state: absent
   with_items:
     - "{{ existing_resources.files }}"

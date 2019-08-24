@@ -1,6 +1,6 @@
 - name: Create a Directory to export items to
   file:
-    path: /tmp/{{ _jbosseapappmigration_name }}-app
+    path: "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app"
     state: directory
     mode: '0777'
 
@@ -9,7 +9,7 @@
   register: current_iss
 
 - name: Export ImageStreams
-  shell: oc get is "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-is-{{ item }}.yml
+  shell: oc get is "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/existing-is-{{ item }}".yml
   with_items: 
     - "{{ current_iss.stdout_lines }}" 
   when: current_iss.stdout_lines | length > 0 
@@ -19,7 +19,7 @@
   register: current_bcs
 
 - name: Export BuildConfigs
-  shell: oc get bc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-bc-{{ item }}.yml
+  shell: oc get bc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/existing-bc-{{ item }}".yml
   with_items: 
     - "{{ current_bcs.stdout_lines }}" 
   when: current_bcs.stdout_lines | length > 0 
@@ -29,7 +29,7 @@
   register: current_dcs
 
 - name: Export Deployment Configs
-  shell: oc get dc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > /tmp/{{ _jbosseapappmigration_name }}-app/existing-dc-{{ item }}.yml
+  shell: oc get dc "{{ item }}" -n {{ _jbosseapappmigration_namespace }} --export -o yaml > "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/existing-dc-{{ item }}".yml
   with_items: 
     - "{{ current_dcs.stdout_lines }}" 
   when: current_dcs.stdout_lines | length > 0 
@@ -50,7 +50,7 @@
     var: current_artifacts 
 
 - name: Export Configuration and artifacts directories from pod
-  shell: oc rsync -n {{ _jbosseapappmigration_namespace }} {{ current_pos.stdout_lines[0] }}:{{ item }} /tmp/{{ _jbosseapappmigration_name }}-app 
+  shell: oc rsync -n {{ _jbosseapappmigration_namespace }} {{ current_pos.stdout_lines[0] }}:{{ item }} {{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app 
   when: 
     - current_pos.stdout_lines | length > 0
     - current_artifacts.stdout_lines | length > 0
