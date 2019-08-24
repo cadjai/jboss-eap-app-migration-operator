@@ -1,0 +1,198 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"rhtconsulting.eapquickstarts.dev/v1alpha1","kind":"JbossEapAppMigration","metadata":{"name":"kitchensink-jbosseapappmigration"},"spec":{"_jbosseapappmigration_name":"kitchensink","_jbosseapappmigration_namespace":"eap6-kitchensink","_jbosseapappmigration_namespace_new":"eap7-kitchensink","_jbosseapappmigration_runtime_image":"registry.redhat.io/jboss-eap-6/eap64-openshift","_jbosseapappmigration_runtime_image_new":"registry.redhat.io/jboss-eap-7/eap72-openshift","_jbosseapappmigration_runtime_image_tag":"latest","_jbosseapappmigration_runtime_image_tag_new":"latest","_jbosseapappmigration_state":"present"}},{"apiVersion":"rhtconsulting.eapquickstarts.dev/v1alpha1","kind":"JbossEapAppMigration","metadata":{"name":"example-jbosseapappmigration"},"spec":{"_jbosseapappmigration_name":"kitchensink","_jbosseapappmigration_namespace":"eap6-kitchensink","_jbosseapappmigration_namespace_new":"eap7-kitchensink","_jbosseapappmigration_runtime_image":"registry.redhat.io/jboss-eap-6/eap64-openshift","_jbosseapappmigration_runtime_image_new":"registry.redhat.io/jboss-eap-7/eap72-openshift","_jbosseapappmigration_runtime_image_tag":"latest","_jbosseapappmigration_runtime_image_tag_new":"latest","_jbosseapappmigration_state":"present"}}]'
+    capabilities: Basic Install
+  name: jboss-eap-app-migration-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Placeholder description
+  displayName: Jboss Eap App Migration Operator
+  install:
+    spec:
+      deployments:
+      - name: jboss-eap-app-migration-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: jboss-eap-app-migration-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: jboss-eap-app-migration-operator
+            spec:
+              containers:
+              - command:
+                - /usr/local/bin/ao-logs
+                - /tmp/ansible-operator/runner
+                - stdout
+                image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.2
+                imagePullPolicy: Always
+                name: ansible
+                resources: {}
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+                  readOnly: true
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: jboss-eap-app-migration-operator
+                image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.2
+                imagePullPolicy: Always
+                name: operator
+                resources: {}
+                volumeMounts:
+                - mountPath: /tmp/ansible-operator/runner
+                  name: runner
+              serviceAccountName: jboss-eap-app-migration-operator
+              volumes:
+              - emptyDir: {}
+                name: runner
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - image
+          - imagestream
+          - imagestreamtag
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        - apiGroups:
+          - build.openshift.io
+          resources:
+          - build
+          - buildconfig
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfig
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        - apiGroups:
+          - project.openshift.io
+          resources:
+          - project
+          - projectrequest
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        - apiGroups:
+          - authorization.openshift.io
+          resources:
+          - role
+          - rolebinding
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        - apiGroups:
+          - apps
+          resourceNames:
+          - jboss-eap-app-migration-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - rhtconsulting.eapquickstarts.dev
+          resources:
+          - jbosseapappmigrations
+          - jbosseapappmigrations/status
+          verbs:
+          - create
+          - update
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        serviceAccountName: jboss-eap-app-migration-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: {}
+  version: 0.0.1

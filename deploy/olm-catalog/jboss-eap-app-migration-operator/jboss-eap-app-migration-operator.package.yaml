@@ -1,0 +1,5 @@
+channels:
+- currentCSV: jboss-eap-app-migration-operator.v0.0.1
+  name: alpha
+defaultChannel: alpha
+packageName: jboss-eap-app-migration-operator
