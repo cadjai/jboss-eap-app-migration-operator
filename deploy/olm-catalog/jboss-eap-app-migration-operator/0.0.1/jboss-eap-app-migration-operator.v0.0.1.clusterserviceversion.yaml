@@ -2,15 +2,48 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
+    capabilities: Seamless upgrade of Jboss EAP container and lift and shift migration of deployed application
+    categories: Application Runtime
+    certified: 'false'
+    containerImage: 'quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.1'
+    createdAt: '2019-09-17T17:15:00Z'
+    description: 'Migrate JBoss EAP container from existing EAP version to a new major version on OpenShift.'
+    repository: 'https://gitlab.com:claudianus/kitchensink-migration-operator'
+    support: 'community'
     alm-examples: '[{"apiVersion":"rhtconsulting.eapquickstarts.dev/v1alpha1","kind":"JbossEapAppMigration","metadata":{"name":"kitchensink-jbosseapappmigration"},"spec":{"_jbosseapappmigration_name":"kitchensink","_jbosseapappmigration_namespace":"eap6-kitchensink","_jbosseapappmigration_namespace_new":"eap7-kitchensink","_jbosseapappmigration_runtime_image":"registry.redhat.io/jboss-eap-6/eap64-openshift","_jbosseapappmigration_runtime_image_new":"registry.redhat.io/jboss-eap-7/eap72-openshift","_jbosseapappmigration_runtime_image_tag":"latest","_jbosseapappmigration_runtime_image_tag_new":"latest","_jbosseapappmigration_state":"present"}},{"apiVersion":"rhtconsulting.eapquickstarts.dev/v1alpha1","kind":"JbossEapAppMigration","metadata":{"name":"example-jbosseapappmigration"},"spec":{"_jbosseapappmigration_name":"kitchensink","_jbosseapappmigration_namespace":"eap6-kitchensink","_jbosseapappmigration_namespace_new":"eap7-kitchensink","_jbosseapappmigration_runtime_image":"registry.redhat.io/jboss-eap-6/eap64-openshift","_jbosseapappmigration_runtime_image_new":"registry.redhat.io/jboss-eap-7/eap72-openshift","_jbosseapappmigration_runtime_image_tag":"latest","_jbosseapappmigration_runtime_image_tag_new":"latest","_jbosseapappmigration_state":"present"}}]'
     capabilities: Basic Install
   name: jboss-eap-app-migration-operator.v0.0.1
-  namespace: placeholder
+  namespace: jboss-eap-app-migration-operator 
 spec:
   apiservicedefinitions: {}
-  customresourcedefinitions: {}
-  description: Placeholder description
-  displayName: Jboss Eap App Migration Operator
+  customresourcedefinitions: 
+    owned:
+      - kind: JbossEapAppMigration
+        name: jbosseapappmigration.rhtconsulting.eapquickstarts.dev
+        version: v1alpha1
+        description: 'An example JBoss EAP App Migration.'
+        displayName: JBoss EAP APP Migration
+        resources:
+          - kind: ServiceAccount
+            version: v1
+          - kind: Role
+            version: v1
+          - kind: RoleBinding
+            version: v1
+          - kind: Deployment
+            version: v1
+          - kind: ReplicaSet
+            version: v1
+          - kind: Pods
+            version: v1 
+        specDescriptors: [] 
+        statusDescriptors: []
+  description: |
+    JBoss EAP app migration when a major version of the container is available. 
+  displayName: 'Jboss Eap App Migration Operator'
+  icon: 
+  - base64data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAKeCAIAAADr2OZhAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAeNJREFUeNrEVllyxTAIQ73/UXqNzvRWqhdsBLH7OvM++uFJ4gULASL4/vr8MLO3Btpgf0cbPMyv4etjHjLP2Is2T64nph1Q7La58Y1kczyNc92y7b52w6g4n3vmXXA7bN/od1QbZX9g6GfnO2+cjfPZH7htOu5x95iH+yjYqFy2OXZ8zptlLIEfjlfeB9/NHhA8bl4d7/7OODBsW/reeJJ/jPMlLpuPFfvF0/APk4exTucl/Mr5iMIxE+bOISUPd/x+zXHhxDwfGiam3GHkCMKnv9kN3BB/CLmv84fp/4y9c2OR+52TxKXVPFi5i6gXVv/xqJuavw+/lk0r2FbcvYYGNyuXFdMxbpbroXJ6w/0Yzsul7qNmyznl6KQ7Jz62Fp33rTwMTnN9jrWkBSy590J/xSeK9pjm6I5V8LN1GfPc0jLYgfcHHucH2PU5NcXvlxipHV5yaen/kTvpAbPGuLVy33/g1Mq9ma/pD0V3N2ZKzKF6J+cveDUnaJHDp9yteOicPjj3+IAlH1UXTpwBSSdR9Iyia7tHlD3JtnLC2vOyppvUbo03U69YZ6quI/epotdZAxcPkhOlh9kLTHb5R7jHyqT/qfZFzxzru4dNzvj4r1l9jkUn7e3/s9P/kNm/jh8BBgCRJgPK9epwSAAAAABJRU5ErkJggg=="
+    mediatype: image/png
   install:
     spec:
       deployments:
@@ -31,7 +64,7 @@ spec:
                 - /usr/local/bin/ao-logs
                 - /tmp/ansible-operator/runner
                 - stdout
-                image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.2
+                image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.1
                 imagePullPolicy: Always
                 name: ansible
                 resources: {}
@@ -50,7 +83,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: jboss-eap-app-migration-operator
-                image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.2
+                image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.1
                 imagePullPolicy: Always
                 name: operator
                 resources: {}
@@ -194,5 +227,12 @@ spec:
   - supported: true
     type: AllNamespaces
   maturity: alpha
-  provider: {}
+  maintainers: 
+  - name: Red Hat
+    email: openshift-operators@redhat.com
+  provider: 
+    name: Red Hat
+  links:
+  - name: Operator Source Code
+    url: https://gitlab.com/claudianus/kitchensink-migration-operator.git 
   version: 0.0.1

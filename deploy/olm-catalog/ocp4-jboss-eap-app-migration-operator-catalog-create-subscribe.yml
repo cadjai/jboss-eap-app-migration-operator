@@ -1,0 +1,32 @@
+apiVersion: operators.coreos.com/v1alpha2
+kind: OperatorGroup
+metadata:
+  name: jboss-eap-app-migration-operator-group
+  namespace: jboss-eap-app-migration-operator
+spec:
+  targetNamespaces:
+  - jboss-eap-app-migration-operator
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: jboss-eap-app-migration-catalogsource
+  namespace: openshift-operator-lifecycle-manager 
+  imagePullPolicy: Always
+spec:
+  sourceType: grpc
+  image: quay.io/cadjai/jboss-eap-app-migration-operator:v0.0.1
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: jboss-eap-app-migration-operator-subscription
+  namespace: jboss-eap-app-migration-operator
+spec:
+  channel: alpha
+  name: jboss-eap-app-migration-operator
+  source: jboss-eap-app-migration-catalogsource
+  sourceNamespace: jboss-eap-app-migration-operator
+

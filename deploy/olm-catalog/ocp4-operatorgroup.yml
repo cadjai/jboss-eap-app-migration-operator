@@ -2,13 +2,13 @@ apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
 metadata:
   name: jboss-eap-app-migration-operator-group
-  namespace: operator-lifecycle-manager
+  namespace: jboss-eap-app-migration-operator 
   annotations:
-    olm.providedAPIs: Alertmanager.v1.monitoring.coreos.com,Prometheus.v1.monitoring.coreos.com,PrometheusRule.v1.monitoring.coreos.com,ServiceMonitor.v1.monitoring.coreos.com
+    olm.providedAPIs: PackageManifest.v1alpha1.packages.apps.redhat.com,Alertmanager.v1.monitoring.coreos.com,Prometheus.v1.monitoring.coreos.com,PrometheusRule.v1.monitoring.coreos.com,ServiceMonitor.v1.monitoring.coreos.com
 spec:
   staticProvidedAPIs: true
   selector:
     matchLabels:
       something.cool.io/cluster-monitoring: "true"
   targetNamespaces:
-  - operator-lifecycle-manager
+  - jboss-eap-app-migration-operator
