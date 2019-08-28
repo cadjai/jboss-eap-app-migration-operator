@@ -10,8 +10,8 @@
     state: directory
     mode: '0777'
   with_items:
-    - /deployments
-    - /opt/eap/standalone/configuration
+    - "{{ _jbosseapappmigration_binary_resources_dir }}"
+    - "{{ _jbosseapappmigration_app_container_config_resources_dir }}"
 
 - name: Lookup All ImageStreams
   set_fact:
@@ -70,7 +70,7 @@
     - "{{ current_pods }}"
 
 - name: Get List of artifacts running inside the Pod above
-  shell: kubectl exec -n {{ _jbosseapappmigration_namespace }} "{{ running_pod.metadata.name }}" ls /deployments
+  shell: kubectl exec -n {{ _jbosseapappmigration_namespace }} "{{ running_pod.metadata.name }}" ls "{{ _jbosseapappmigration_binary_resources_dir }}"
   when: 
     - running_pod is defined 
     - current_pods | length > 0
@@ -87,5 +87,5 @@
     - running_pod is defined 
     - current_artifacts.stdout_lines | length > 0
   with_items:
-    - /deployments
-    - /opt/eap/standalone/configuration
+    - "{{ _jbosseapappmigration_binary_resources_dir }}"
+    - "{{ _jbosseapappmigration_app_container_config_resources_dir }}"

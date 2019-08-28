@@ -65,7 +65,7 @@
 - name: Locate the original Binary to use for the Binary build
   find:
     paths:
-      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app/deployments"
+      - "{{ _jbosseapappmigration_exported_resources_dir }}/{{ _jbosseapappmigration_name }}-app{{ _jbosseapappmigration_binary_resources_dir }}"
     pattern: "*.war,*.jar.*.ear"
   register: build_binaries
 
