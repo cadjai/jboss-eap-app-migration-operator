@@ -6,7 +6,7 @@
 
 - name: Lookup All Secrets
   set_fact:
-    current_secrets: "{{ lookup('k8s', api_versions='v1', kind='Secret', namespace=_jbosseapappmigration_namespace) }}"
+    current_secrets: "{{ lookup('k8s', api_version='v1', kind='Secret', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Prints List of looked up secrets
   debug:
@@ -14,9 +14,9 @@
 
 - name: Print Filtered current secrets
   debug:
-    var: item
+    var: item | to_yaml
   with_items:
-    - "{{ current_secrets | list }}"
+    - "{{ current_secrets }}"
   when:
     - current_secrets | length > 0
     - "('default' not in item.metadata.name)"
@@ -27,12 +27,16 @@
 
 - name: Save Secrets into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    #content: "{{ (item | combine({'apiVersion': 'v1', 'kind': 'Secret'})) | to_yaml }}"
+    content: "{{ ({'apiVersion': 'v1', 'kind': 'Secret'} | combine(item)) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'Secret'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ ((item | combine({'apiVersion': 'v1'})) | combine({'kind': 'Secret'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-secret.yml"
   with_items:
     #- "{{ current_secrets | list }}"
     - "{{ current_secrets }}"
   when:
+    - current_secrets | length > 0
     - "('default' not in item.metadata.name)"
     - "('deployer' not in item.metadata.name)"
     - "('builder' not in item.metadata.name)"
@@ -40,13 +44,27 @@
     - "('-dockercfg-' not in item.metadata.name)"
   register: saved_secrets
 
+- name: Print output of saved secrets
+  debug:
+    var: saved_secrets.results
+
+- name: Print Each saved secret for sanity check
+  shell: cat {{ item.dest }}
+  with_items:
+    - "{{ saved_secrets.results }}"
+  when:
+    - saved_secrets | length > 0
+    - item.dest is defined
+
 - name: Lookup All ServiceAccounts
   set_fact:
-    current_sas: "{{ lookup('k8s', api_versions='v1', kind='ServiceAccount', namespace=_jbosseapappmigration_namespace) }}"
+    current_sas: "{{ lookup('k8s', api_version='v1', kind='ServiceAccount', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save ServiceAccounts into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'ServiceAccount'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'ServiceAccount'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'ServiceAccount'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-sa.yml"
   with_items:
     #- "{{ current_sas | list }}"
@@ -59,11 +77,13 @@
 
 - name: Lookup All ConfigMaps
   set_fact:
-    current_cms: "{{ lookup('k8s', api_versions='v1', kind='ConfigMap', namespace=_jbosseapappmigration_namespace) }}"
+    current_cms: "{{ lookup('k8s', api_version='v1', kind='ConfigMap', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save ConfigMaps into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'ConfigMap'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'ConfigMap'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'ConfigMap'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-cm.yml"
   with_items:
     - "{{ current_cms | list }}"
@@ -72,11 +92,14 @@
 
 - name: Lookup All RoleBindings
   set_fact:
-    current_rbs: "{{ lookup('k8s', api_versions='v1', kind='RoleBinding', namespace=_jbosseapappmigration_namespace) }}"
+    #current_rbs: "{{ lookup('k8s', kind='RoleBinding', namespace=_jbosseapappmigration_namespace) }}"
+    current_rbs: "{{ lookup('k8s', api_version='rbac.authorization.k8s.io/v1', kind='RoleBinding', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save RoleBindings into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'rbac.authorization.k8s.io/v1', 'kind': 'RoleBinding'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'rbac.authorization.k8s.io/v1'} | combine({'kind': 'RoleBinding'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'rbac.authorization.k8s.io/v1'})) | combine({'kind': 'RoleBinding'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-rb.yml"
   with_items:
     - "{{ current_rbs | list }}"
@@ -89,11 +112,13 @@
 
 - name: Lookup All Services
   set_fact:
-    current_svcs: "{{ lookup('k8s', api_versions='v1', kind='Service', namespace=_jbosseapappmigration_namespace) }}"
+    current_svcs: "{{ lookup('k8s', api_version='v1', kind='Service', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save Services into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'Service'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'Service'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'Service'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-svc.yml"
   with_items:
     #- "{{ current_svcs | list }}"
@@ -104,11 +129,13 @@
 
 - name: Lookup All Routes
   set_fact:
-    current_routes: "{{ lookup('k8s', api_versions='v1', kind='Route', namespace=_jbosseapappmigration_namespace) }}"
+    current_routes: "{{ lookup('k8s', api_version='v1', kind='Route', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save Routes into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'Route'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'Route'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'Route'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-route.yml"
   with_items:
     #- "{{ current_routes | list }}"

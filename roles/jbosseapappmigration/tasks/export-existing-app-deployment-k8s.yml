@@ -15,37 +15,43 @@
 
 - name: Lookup All ImageStreams
   set_fact:
-    current_iss: "{{ lookup('k8s', api_versions='v1', kind='ImageStream', namespace=_jbosseapappmigration_namespace) }}"
+    current_iss: "{{ lookup('k8s', api_version='v1', kind='ImageStream', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save ImageStreams into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'ImageStream'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'ImageStream'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'ImageStream'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-is.yml"
   with_items:
     - "{{ current_iss }}"
-   # - "{{ current_iss | list }}"
+    #- "{{ current_iss | list }}"
   register: saved_iss
 
 - name: Lookup All BuildConfigs
   set_fact:
-    current_bcs: "{{ lookup('k8s', api_versions='v1', kind='BuildConfig', namespace=_jbosseapappmigration_namespace) }}"
+    current_bcs: "{{ lookup('k8s', api_version='v1', kind='BuildConfig', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save BuildConfigs into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'BuildConfig'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'BuildConfig'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'BuildConfig'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-bc.yml"
   with_items:
     - "{{ current_bcs }}"
-   # - "{{ current_bcs | list }}"
+    #- "{{ current_bcs | list }}"
   register: saved_bcs
 
 - name: Lookup All DeploymentConfigs
   set_fact:
-    current_dcs: "{{ lookup('k8s', api_versions='v1', kind='DeploymentConfig', namespace=_jbosseapappmigration_namespace) }}"
+    current_dcs: "{{ lookup('k8s', api_version='v1', kind='DeploymentConfig', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Save DeploymentConfigs into temp dir
   copy:
-    content: "{{ item | to_yaml }}"
+    content: "{{ {'apiVersion': 'v1', 'kind': 'DeploymentConfig'} | combine(item) | to_yaml }}"
+    #content: "{{ (( {'apiVersion': 'v1'} | combine({'kind': 'DeploymentConfig'})) | combine(item) ) | to_yaml }}"
+    #content: "{{ (( item | combine({'apiVersion': 'v1'})) | combine({'kind': 'DeploymentConfig'})) | to_yaml }}"
     dest: "{{ tmpdir.path }}/{{ item.metadata.name }}-dc.yml"
   with_items:
     #- "{{ current_dcs | list }}"
@@ -54,8 +60,8 @@
 
 - name: Lookup Running Pod
   set_fact:
-    #current_pods: "{{ lookup('k8s', api_versions='v1', kind='Pod', namespace=_jbosseapappmigration_namespace, field_selectors='status.phase=Running') }}"
-    current_pods: "{{ lookup('k8s', api_versions='v1', kind='Pod', namespace=_jbosseapappmigration_namespace) }}"
+    #current_pods: "{{ lookup('k8s', api_version='v1', kind='Pod', namespace=_jbosseapappmigration_namespace, field_selectors='status.phase=Running') }}"
+    current_pods: "{{ lookup('k8s', api_version='v1', kind='Pod', namespace=_jbosseapappmigration_namespace) }}"
 
 - name: Print output of running Pod
   debug:

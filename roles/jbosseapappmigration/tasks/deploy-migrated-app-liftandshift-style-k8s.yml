@@ -6,6 +6,15 @@
     pattern: "*.yml"
   register: existing_support_objects
 
+- name: Print each of the resource to be created for validation
+  shell: cat {{ item.path }}
+  with_items:
+    - "{{ existing_support_objects.files }}"
+  when:
+    - existing_support_objects.matched | int > 0
+    - existing_support_objects.files is defined
+  register: existing_support_objects_redeploy
+
 - name: Set exported secrets from existing App to {{ _jbosseapappmigration_state }}
   k8s:
     state: "{{ _jbosseapappmigration_state }}"
