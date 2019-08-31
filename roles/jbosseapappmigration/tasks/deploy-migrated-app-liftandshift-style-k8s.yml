@@ -28,13 +28,23 @@
     - " '-secret' in item.path | basename"
   register: existing_secrets_redeploy
 
+- name: Print outcome of redeploy step from above
+  debug:
+    var: existing_secrets_redeploy.results
+
+- name: Print Each element of the redeploy result from above
+  debug:
+    var: item
+  with_items:
+    - "{{ existing_secrets_redeploy.results }}"
+
 - name: Set Image Pull Secret Fact if present so that it can be used to link to builder SA
   set_fact:
     image_pull_secret: "{{ item.result.metadata.name }}"
   with_items:
     - "{{ existing_secrets_redeploy.results }}"
   when:
-    - item.changed == true
+    - item.changed | bool
     - item.item is defined
     - item.item.path is defined
     - " '-secret' in item.item.path | basename "
@@ -43,19 +53,31 @@
     - item.result.metadata is defined
     - item.result.metadata.name is defined
 
-- name: Patch the Default SA with the secret retrived above
+- name: Print Image Pull Secret set above
+  debug:
+    var: image_pull_secret
+
+- name: Patch the Default SA with the secret retrieved above
   shell: "kubectl patch serviceaccount default -p '{\"imagePullSecrets\": [{\"name\": \"{{ image_pull_secret }}\" }]}' -n {{ _jbosseapappmigration_namespace_new }}"
   when:
     - image_pull_secret is defined
     - image_pull_secret | length > 0
   register: image_pull_secret_linked_default
 
-- name: Patch the Builder SA with the secret retrived above
+- name: Print output of  linking image pull secret to default SA
+  debug:
+    var: image_pull_secret_linked_default
+
+- name: Patch the Builder SA with the secret retrieved above
   shell: "kubectl patch serviceaccount builder -p '{\"secrets\": [{\"name\": \"{{ image_pull_secret }}\" }]}' -n {{ _jbosseapappmigration_namespace_new }}"
   when:
     - image_pull_secret is defined
     - image_pull_secret | length > 0
   register: image_pull_secret_linked_builder
+
+- name: Print output of linking image pull secret to builder SA
+  debug:
+    var: image_pull_secret_linked_builder
 
 - name: Set Remaining exported Resources from existing App to {{ _jbosseapappmigration_state }}
   k8s:
@@ -78,15 +100,25 @@
     pattern: "*.war,*.jar.*.ear"
   register: build_binaries
 
+- name: Print Output of original binary
+  debug:
+    var: build_binaries
+
 - name: Build the new app using the existing binary and new image
   shell: oc start-build {{ _jbosseapappmigration_name }} --from-file={{ build_binaries.files[0].path }} --loglevel=5 -n {{ _jbosseapappmigration_namespace_new }}
   when:
     - build_binaries.matched | int > 0
     - build_binaries.files is defined
     - image_pull_secret_linked_builder is defined
+    - image_pull_secret_linked_builder.rc is defined 
     - image_pull_secret_linked_builder.rc == 0
+    - image_pull_secret_linked_builder.stdout is defined
     - " 'patched' in image_pull_secret_linked_builder.stdout "
   register: app_build
+
+- name: Print Output of Start build command
+  debug:
+    var: app_build
 
 - name: Wait to give the builder pod time to complete the build
   when:
@@ -106,11 +138,14 @@
     name: "{{ (app_build.stdout.split(' ')[0]).split('/')[1] }}-build"
   register: binary_build_complete
   until:
-  - " binary_build_complete.result.status.phase != 'Pending' "
   - " binary_build_complete.result.status.phase == 'Succeeded' "
-  retries: 5
+  retries: 10 
   delay: 10
   changed_when: false
+
+- name: Print output of Build Complete Check step
+  debug:
+    var: binary_build_complete
 
 - name: Set exported DeploymentConfig Resource from existing App to {{ _jbosseapappmigration_state }}
   k8s:
